@@ -1,5 +1,16 @@
 # Match 3 programming assignment
 
+It's really awesome of you to apply for a position at Resolution Games!
+
+As part of the evaluation process, we let candidates make a small game in Unity.
+
+Please read the following instructions and have a look at the project.
+Then get back to me (Martin) about when you estimate you can submit the result.
+(This means you choose your own deadline.)
+Then hack away! :-)
+
+## Instructions
+
 Make a simple Match 3 game based on this Unity project.
 
 The game mechanics are as follows:
