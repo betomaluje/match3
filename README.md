@@ -34,12 +34,13 @@ Follow Resolution's [Style guide](https://docs.google.com/document/d/125PpjQRCyb
 
 ## Submission
 
-Work with Git locally as usual. (Do not push, as you have no write permissions.)
+Clone the project from this repository.
+Do not create a public repository!
+
+Work with Git locally as usual. Do not push, as you have no write permissions.
 
 Make sure you have committed the final version.
 
 Then create a zip file of the .git directory.
 
 Send the zip file to Martin. You should have my e-mail address already. :-)
-
-Do not create a public repository!
