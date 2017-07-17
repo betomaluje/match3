@@ -30,7 +30,7 @@ See [the movie](https://drive.google.com/file/d/0Bwkg9csM9h-BWVhsOWxWM0JMUFU/vie
 to get an idea of what it can look like.
 Feel free to make it more spectacular as long as the basic gameplay is there.
 
-Follow Resolution's [Style guide](https://docs.google.com/document/d/125PpjQRCybOSFyk-ecJC3PgkHHkn5wflN3XIuIVpAV4/edit).
+Follow Resolution's [Style guide](StyleGuide.pdf).
 
 ## Submission
 
