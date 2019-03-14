@@ -23,6 +23,8 @@ The game mechanics are as follows:
 
   * The user can click on a tile. The tile is then removed.
 
+Do not add more features than this.
+
 Make it simple, but write the code to a quality that's good enough for professional developers to continue working on.
 As a performance guideline for the code, design it so it runs well on relatively limited devices such as mobiles.
 
