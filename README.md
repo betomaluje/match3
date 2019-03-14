@@ -15,9 +15,9 @@ Make a simple Match 3 game based on this Unity project.
 
 The game mechanics are as follows:
 
-  * The game consists of m x n tiles (configurable).
+  * The game consists of m x n tiles (configurable in editor or code).
 
-  * If more than three of the same tile type are in a horizontal row, they are removed.
+  * If three or more of the same tile type are in a horizontal row, they are removed.
 
   * A tile falls down if there is no tile below it (unless it's on the bottom row).
 
@@ -28,19 +28,17 @@ As a performance guideline for the code, design it so it runs well on relatively
 
 See [the movie](https://drive.google.com/file/d/0Bwkg9csM9h-BWVhsOWxWM0JMUFU/view?usp=sharing)
 to get an idea of what it can look like.
-Feel free to make it more spectacular as long as the basic gameplay is there.
+
+Start with cloning this repository. Keep it local. Do not create a public repository!
+Work with Git locally as usual. Do not push, as you have no write permissions.
 
 Follow Resolution's [Style guide](StyleGuide.pdf).
 
 ## Submission
 
-Clone the project from this repository.
-Do not create a public repository!
-
-Work with Git locally as usual. Do not push, as you have no write permissions.
-
 Make sure you have committed the final version.
 
 Then create a zip file of the .git directory.
+The zip file should only contain the `.git` directory, nothing else.
 
 Send the zip file to Martin. You should have my e-mail address already. :-)
