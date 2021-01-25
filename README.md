@@ -10,7 +10,8 @@ Read them again before submitting.
 ## Preparations
 
 The very first thing you should do is read through these instructions.
-After that, send an e-mail to Martin telling when you estimate you can submit the result.
+After that, send an e-mail to the email mentioned in the invite, with your suggested deadline for submission.
+
 This means you choose your own deadline. There is no need to ask us if the deadline is OK.
 After that, start working on the game and submit it no later than the deadline.
 
@@ -59,4 +60,4 @@ Make sure you have committed the final version.
 Then create a zip file of the .git directory.
 The zip file should only contain the `.git` directory, nothing else.
 
-Send the zip file to Martin. You should have my e-mail address already. :-)
+Send the zip file to the suggested email (see your invite to the test).
