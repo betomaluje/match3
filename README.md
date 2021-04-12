@@ -19,6 +19,16 @@ After that, start working on the game and submit it no later than the deadline.
 
 Make a simple Match 3 game based on this Unity project.
 
+See [the movie](https://drive.google.com/file/d/0Bwkg9csM9h-BWVhsOWxWM0JMUFU/view?usp=sharing)
+to get an idea of what it can look like.
+
+### Unity version
+
+Make sure the Unity version you use matches the one in the project.
+You can see that in Unity Hub, or by looking in the file `ProjectSettings/ProjectVersion.txt`.
+
+### Game mechanics
+
 The game mechanics are as follows:
 
   * The game consists of m x n tiles (configurable in editor or code).
@@ -33,17 +43,16 @@ The game mechanics are as follows:
 
 Do not add more features than this.
 
-Make it simple, but write the code to a quality that's good enough for professional developers to continue working on.
-As a performance guideline for the code, design it so it runs well on relatively limited devices such as mobiles.
-
-See [the movie](https://drive.google.com/file/d/0Bwkg9csM9h-BWVhsOWxWM0JMUFU/view?usp=sharing)
-to get an idea of what it can look like.
+### Version control
 
 Start with cloning this repository. Keep it local. Do not create a public repository!
 Work with Git locally as usual. Do not push, as you have no write permissions.
 If you haven't worked with Git before, this is an opportunity to learn it.
 
-Note that the project is for an old Unity version, so Unity will notify you and upgrade it.
+### Other guidelines
+
+Make it simple, but write the code to a quality that's good enough for professional developers to continue working on.
+As a performance guideline for the code, design it so it runs well on relatively limited devices such as mobiles.
 
 ## Requirements
 
