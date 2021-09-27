@@ -19,7 +19,7 @@ After that, start working on the game and submit it no later than the deadline.
 
 Make a simple Match 3 game based on this Unity project.
 
-See [the movie](https://drive.google.com/file/d/0Bwkg9csM9h-BWVhsOWxWM0JMUFU/view?usp=sharing)
+See [the movie](https://drive.google.com/file/d/0Bwkg9csM9h-BWVhsOWxWM0JMUFU/view?resourcekey=0-j-Yhvo1IZxDJp96OSJsucQ)
 to get an idea of what it can look like.
 
 ### Unity version
