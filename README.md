@@ -62,6 +62,8 @@ As a performance guideline for the code, design it so it runs well on relatively
 
   * Do not use raycasting for anything except if required to detect what tile the player clicked on.
 
+  * Apart from Unity's built-in functionality, do not use any plugin, external library, or code you didn't write yourself.
+
 ## Submission
 
 Make sure you have committed the final version.
