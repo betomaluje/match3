@@ -4,13 +4,14 @@ using UnityEngine;
 
 public class Tile : MonoBehaviour
 {
-    [SerializeField] private TileType _type;
+    [SerializeField] private TileType _type = TileType.None;
     [SerializeField] private Transform _destroyFX;
     [SerializeField] private float _timeToMove = .2f;
 
     private GridManager _manager;
 
-    private Vector3Int _tileKey;
+    public Vector3Int TileKey { get; private set; }
+    public TileType Type => _type;
 
     private void Awake()
     {
@@ -19,15 +20,20 @@ public class Tile : MonoBehaviour
 
     private void Start()
     {
-        _tileKey = Vector3Int.FloorToInt(transform.position);
+        TileKey = Vector3Int.FloorToInt(transform.position);
     }
 
     public void OnMouseDown()
     {
+        // we will use it's position to detect row and column
+        _manager.OnTileDestroyed(TileKey);
+        DestroyTile();
+    }
+
+    public void DestroyTile()
+    {
         if (_destroyFX != null) Instantiate(_destroyFX, transform.position, Quaternion.identity);
 
-        // we will use it's position to detect row and column
-        _manager.OnTileDestroyed(_tileKey);
         Destroy(gameObject);
     }
 
@@ -35,6 +41,8 @@ public class Tile : MonoBehaviour
     {
         var targetPosition = Vector3Int.FloorToInt(transform.position);
         targetPosition.y -= 1;
+        // we update our key
+        TileKey = targetPosition;
 
         StartCoroutine(MoveTile(targetPosition));
     }
