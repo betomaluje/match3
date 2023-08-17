@@ -47,6 +47,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   _type: 0
   _destroyFX: {fileID: 0}
+  _timeToMove: 0.3
 --- !u!65 &8927173814863959954
 BoxCollider:
   m_ObjectHideFlags: 0
