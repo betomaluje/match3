@@ -46,8 +46,9 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   _type: 0
-  _destroyFX: {fileID: 0}
-  _timeToMove: 0.3
+  _destroyFX: {fileID: 7118285468858330651, guid: 2aed2a09102e32145ac5bdd10acf5287,
+    type: 3}
+  _timeToMove: 0.2
 --- !u!65 &8927173814863959954
 BoxCollider:
   m_ObjectHideFlags: 0
