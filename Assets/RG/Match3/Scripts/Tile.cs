@@ -1,5 +1,4 @@
-using System.Collections;
-using RG.Match3.Scripts;
+using System.Threading.Tasks;
 using UnityEngine;
 
 public class Tile : MonoBehaviour
@@ -10,7 +9,8 @@ public class Tile : MonoBehaviour
 
     private GridManager _manager;
 
-    public Vector3Int TileKey { get; private set; }
+    public Vector3Int TileKey => Vector3Int.FloorToInt(transform.position);
+
     public TileType Type => _type;
 
     private void Awake()
@@ -18,16 +18,10 @@ public class Tile : MonoBehaviour
         _manager = FindObjectOfType<GridManager>();
     }
 
-    private void Start()
-    {
-        TileKey = Vector3Int.FloorToInt(transform.position);
-    }
-
     public void OnMouseDown()
     {
         // we will use it's position to detect row and column
         _manager.OnTileDestroyed(TileKey);
-        DestroyTile();
     }
 
     public void DestroyTile()
@@ -37,28 +31,23 @@ public class Tile : MonoBehaviour
         Destroy(gameObject);
     }
 
-    public void MoveDown()
+    public async Task<Vector3Int> MoveDown()
     {
-        var targetPosition = Vector3Int.FloorToInt(transform.position);
+        var currentPosition = transform.position;
+        var targetPosition = Vector3Int.FloorToInt(currentPosition);
         targetPosition.y -= 1;
-        // we update our key
-        TileKey = targetPosition;
 
-        StartCoroutine(MoveTile(targetPosition));
-    }
-
-    private IEnumerator MoveTile(Vector3 targetPosition)
-    {
         var elapsedTime = 0f;
-        var startPosition = transform.position;
 
         while (elapsedTime < _timeToMove)
         {
-            transform.position = Vector3.Lerp(startPosition, targetPosition, elapsedTime / _timeToMove);
+            transform.position = Vector3.Lerp(currentPosition, targetPosition, elapsedTime / _timeToMove);
             elapsedTime += Time.deltaTime;
-            yield return null;
+            await Task.Yield();
         }
 
         transform.position = targetPosition;
+
+        return targetPosition;
     }
 }

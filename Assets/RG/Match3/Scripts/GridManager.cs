@@ -1,23 +1,26 @@
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading.Tasks;
 using UnityEngine;
 
 public class GridManager : MonoBehaviour
 {
-    [SerializeField] private int _width = 5;
+    [Header("Rules")] [SerializeField] private int _width = 5;
+
     [SerializeField] private int _height = 5;
-    [SerializeField] private Tile[] _tilePrefabs;
+    [SerializeField] [Min(3)] private int _minPerRow = 3;
+
+    [Header("Tiles")] [SerializeField] private Tile[] _tilePrefabs;
+
     [SerializeField] private Transform _tileContainer;
 
     [Header("Camera")] [SerializeField] private Transform _camera;
 
-    [Header("Debug")] [SerializeField] private bool _debug = true;
-
-    private Dictionary<Vector3Int, Tile> _tiles;
+    public Dictionary<Vector3Int, Tile> Tiles { get; private set; }
 
     private void Start()
     {
-        _tiles = new Dictionary<Vector3Int, Tile>();
+        Tiles = new Dictionary<Vector3Int, Tile>();
         foreach (var point in EvaluateGridPoints())
         {
             var tilePrefab = _tilePrefabs[Random.Range(0, _tilePrefabs.Length)];
@@ -25,7 +28,7 @@ public class GridManager : MonoBehaviour
             tile.name = $"Tile ({point.x} {point.y})";
             tile.transform.SetParent(_tileContainer);
 
-            _tiles.Add(point, tile);
+            Tiles.Add(point, tile);
         }
 
         _camera.position = new Vector3(_width / 2f - .5f, _height / 2f - .5f, -10);
@@ -35,23 +38,36 @@ public class GridManager : MonoBehaviour
 
     private void OnDrawGizmos()
     {
-        if (!_debug || Application.isPlaying) return;
+        if (Application.isPlaying) return;
         var size = Vector2.one;
-        foreach (var point in EvaluateGridPoints())
-            Gizmos.DrawWireCube(point, size);
+        foreach (var point in EvaluateGridPoints()) Gizmos.DrawWireCube(point, size);
     }
 
     #endregion
 
     /// <summary>
-    ///     Get all the Tiles that are above a certain "y" height and in a certain column for a given "x" position
+    ///     Get all the Tiles that are equal or above a certain "y" height and in a certain column for a given "x" position
     /// </summary>
     /// <param name="x">The column number</param>
-    /// <param name="y">The row number to search above</param>
+    /// <param name="y">The row number to start searching above</param>
     /// <returns>A dictionary for all the available tiles in that column</returns>
-    private Dictionary<Vector3Int, Tile> GetVerticalTiles(int x, int y)
+    private Dictionary<Vector3Int, Tile> GetColumn(int x, int y)
     {
-        return _tiles.Where(pos => pos.Key.x == x && pos.Key.y >= y)
+        return Tiles.Where(pos =>
+                pos.Value != null && pos.Value.TileKey.x == x && pos.Value.TileKey.y >= y)
+            .ToDictionary(p => p.Key, p => p.Value);
+    }
+
+    /// <summary>
+    ///     Get all the Tiles that are only above a certain "y" height and in a certain column for a given "x" position
+    /// </summary>
+    /// <param name="x">The column number</param>
+    /// <param name="y">The row number to start searching above</param>
+    /// <returns>A dictionary for all the available tiles in that column</returns>
+    private Dictionary<Vector3Int, Tile> GetAboveTiles(int x, int y)
+    {
+        return Tiles.Where(pos =>
+                pos.Value != null && pos.Value.TileKey.x == x && pos.Value.TileKey.y > y)
             .ToDictionary(p => p.Key, p => p.Value);
     }
 
@@ -60,26 +76,91 @@ public class GridManager : MonoBehaviour
     /// </summary>
     /// <param name="y">The row number</param>
     /// <returns>A dictionary for all the available tiles in that row</returns>
-    private Dictionary<Vector3Int, Tile> GetHorizontalTiles(int y)
+    private List<Tile> GetHorizontalTiles(int y)
     {
-        return _tiles.Where(pos => pos.Key.y == y)
-            .ToDictionary(p => p.Key, p => p.Value);
+        return Tiles.Where(pos => pos.Value != null && pos.Value.TileKey.y == y)
+            .Select(p => p.Value)
+            .OrderBy(p => p.TileKey.x)
+            .ToList();
     }
 
-    public void OnTileDestroyed(Vector3Int tilePosition)
+    public async void OnTileDestroyed(Vector3Int tilePosition)
     {
-        if (_debug)
-            Debug.Log($"clicked ({tilePosition.x}, {tilePosition.y})");
+        // 1. we remove it from the main list
+        if (Tiles.TryGetValue(tilePosition, out var t))
+        {
+            t.DestroyTile();
+            Tiles.Remove(tilePosition);
+        }
 
-        _tiles.Remove(tilePosition);
+        // 2. move tiles 1 down and update in our list
+        await MoveColumnDown(tilePosition);
 
-        // get all the column to move down
-        var verticalAbove = GetVerticalTiles(tilePosition.x, tilePosition.y);
+        // 3. after moving, check every row if there's any match
+        var matches = await CheckHorizontal(tilePosition);
+
+        // 4. if match, remove all those tiles
+        // 5. repeat
+        foreach (var match in matches)
+        {
+            ConsoleDebug.Instance.Log($"Should destroy {match}");
+            OnTileDestroyed(match);
+        }
+    }
+
+    private async Task MoveColumnDown(Vector3Int tilePosition)
+    {
+        var verticalAbove = GetAboveTiles(tilePosition.x, tilePosition.y);
+
         foreach (var tile in verticalAbove)
-            if (tile.Key.y > tilePosition.y)
-                tile.Value.MoveDown();
+        {
+            var previousPosition = tile.Value.TileKey;
+            if (Tiles.ContainsKey(previousPosition))
+                Tiles.Remove(previousPosition);
 
-        // check horizontal for matches
+            var newPosition = await tile.Value.MoveDown();
+
+            Tiles[newPosition] = tile.Value;
+        }
+    }
+
+    private async Task<List<Vector3Int>> CheckHorizontal(Vector3Int tilePosition)
+    {
+        var column = GetColumn(tilePosition.x, tilePosition.y);
+
+        var toCheck = new List<Vector3Int>();
+        foreach (var tile in column)
+        {
+            var a = CheckHorizontalMatches(tile.Key);
+            toCheck.AddRange(a);
+        }
+
+        return await Task.FromResult(toCheck);
+    }
+
+    private IEnumerable<Vector3Int> CheckHorizontalMatches(Vector3Int tilePosition)
+    {
+        ConsoleDebug.Instance.Log($"Check horizontal on {tilePosition.y}");
+
+        // we get the filtered row for the same tile type
+        var sameRow = GetHorizontalTiles(tilePosition.y);
+
+        var match = new Match(_minPerRow);
+        foreach (var tile in sameRow)
+            match.AddToList(tile);
+
+        var matches = match.Check();
+
+        var toCheck = new List<Vector3Int>();
+        foreach (var m in matches)
+        {
+            ConsoleDebug.Instance.Log($"{m[0].Type} -> destroying {m.Count} tiles");
+
+            foreach (var tile in m)
+                toCheck.Add(tile.TileKey);
+        }
+
+        return toCheck;
     }
 
     private IEnumerable<Vector3Int> EvaluateGridPoints()
