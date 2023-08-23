@@ -1,11 +1,13 @@
 using System.Collections.Generic;
+using System.Linq;
 using UnityEngine;
 
 public class ConsoleDebug : MonoBehaviour
 {
-    [SerializeField] private bool _debug = true;
-    
     private static ConsoleDebug instance;
+
+    [SerializeField]
+    private bool _debug = true;
 
     public static ConsoleDebug Instance
     {
@@ -47,7 +49,8 @@ public class ConsoleDebug : MonoBehaviour
 
     public void Log<T>(IEnumerable<T> list, string header)
     {
-        if (_debug)
-            Debug.Log($"{header}: {string.Join(", ", list)}");
+        var enumerable = list.ToList();
+        if (_debug && enumerable.Any())
+            Debug.Log($"{header}: {string.Join(", ", enumerable)}");
     }
 }
