@@ -121,35 +121,27 @@ public class GridManager : MonoBehaviour
     private async Task DestroyTiles(List<Vector3Int> tilePositions)
     {
         _isBusy = true;
-
-        var moveTasks = new List<Task>(tilePositions.Count);
-
         foreach (var tilePosition in tilePositions)
-        {
             // 1. we remove it from the main list
             if (_tiles.TryGetValue(tilePosition, out var t))
                 t.DestroyTile();
 
-            // 2. move tiles 1 down and update in our list
-            moveTasks.Add(MoveColumnDown(tilePosition));
-        }
+        var matches = new List<Vector3Int>();
 
-        await Task.WhenAll(moveTasks);
-
-        var matchTasks = new List<Task>();
         foreach (var tilePosition in tilePositions)
         {
-            // 3. after moving, check every row if there's any match
-            var matches = CheckHorizontal(tilePosition);
-            // ConsoleDebug.Instance.Log(matches, "Marked to Remove");
+            // 2. move tiles 1 down and update in our list
+            await MoveColumnDown(tilePosition);
 
-            // 4. if match, remove all those tiles
-            // 5. repeat
-            matchTasks.Add(Task.Delay(300));
-            matchTasks.Add(DestroyTiles(matches));
+            // 3. after moving, check every row if there's any match
+            matches.AddRange(CheckHorizontal(tilePosition));
         }
 
-        await Task.WhenAll(matchTasks);
+        // 4. if match, remove all those tiles
+        // 5. repeat
+        matches = matches.Distinct().ToList();
+        if (matches.Count > 0)
+            await DestroyTiles(matches);
 
         _isBusy = false;
     }
