@@ -1,3 +1,4 @@
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
@@ -28,11 +29,17 @@ public class GridManager : MonoBehaviour
     [SerializeField]
     private Transform _tileContainer;
 
-    public Dictionary<Vector3Int, Tile> Tiles { get; private set; }
+    [Header("Camera")]
+    [SerializeField]
+    private Transform _camera;
+
+    private bool _isBusy;
+
+    private ConcurrentDictionary<Vector3Int, Tile> _tiles;
 
     private void Start()
     {
-        Tiles = new Dictionary<Vector3Int, Tile>();
+        _tiles = new ConcurrentDictionary<Vector3Int, Tile>();
         foreach (var point in EvaluateGridPoints())
         {
             var tilePrefab = _tilePrefabs[Random.Range(0, _tilePrefabs.Length)];
@@ -40,7 +47,7 @@ public class GridManager : MonoBehaviour
             tile.name = $"Tile ({point.x} {point.y})";
             tile.transform.SetParent(_tileContainer);
 
-            Tiles.Add(point, tile);
+            _tiles.TryAdd(point, tile);
         }
 
         _camera.position = new Vector3(_width / 2f - .5f, _height / 2f - .5f, -10);
@@ -63,11 +70,13 @@ public class GridManager : MonoBehaviour
     /// <param name="x">The column number</param>
     /// <param name="y">The row number to start searching above</param>
     /// <returns>A dictionary for all the available tiles in that column</returns>
-    private Dictionary<Vector3Int, Tile> GetColumn(int x, int y)
+    private List<Vector3Int> GetColumn(int x, int y)
     {
-        return Tiles.Where(pos =>
+        return _tiles.Where(pos =>
                 pos.Value != null && pos.Value.TileKey.x == x && pos.Value.TileKey.y >= y)
-            .ToDictionary(p => p.Key, p => p.Value);
+            .Select(p => p.Key)
+            .OrderBy(p => p.y)
+            .ToList();
     }
 
     /// <summary>
@@ -76,11 +85,13 @@ public class GridManager : MonoBehaviour
     /// <param name="x">The column number</param>
     /// <param name="y">The row number to start searching above</param>
     /// <returns>A dictionary for all the available tiles in that column</returns>
-    private Dictionary<Vector3Int, Tile> GetAboveTiles(int x, int y)
+    private List<Tile> GetAboveTiles(int x, int y)
     {
-        return Tiles.Where(pos =>
+        return _tiles.Where(pos =>
                 pos.Value != null && pos.Value.TileKey.x == x && pos.Value.TileKey.y > y)
-            .ToDictionary(p => p.Key, p => p.Value);
+            .Select(p => p.Value)
+            .OrderBy(p => p.TileKey.y)
+            .ToList();
     }
 
     /// <summary>
@@ -90,67 +101,95 @@ public class GridManager : MonoBehaviour
     /// <returns>A dictionary for all the available tiles in that row</returns>
     private List<Tile> GetHorizontalTiles(int y)
     {
-        return Tiles.Where(pos => pos.Value != null && pos.Value.TileKey.y == y)
+        return _tiles.Where(pos => pos.Value != null && pos.Value.TileKey.y == y)
             .Select(p => p.Value)
             .OrderBy(p => p.TileKey.x)
             .ToList();
     }
 
+    /// <summary>
+    ///     Called when a Tile is clicked
+    /// </summary>
+    /// <param name="tilePosition">The current tile position</param>
     public async void OnTileDestroyed(Vector3Int tilePosition)
     {
-        // 1. we remove it from the main list
-        if (Tiles.TryGetValue(tilePosition, out var t))
+        if (_isBusy) return;
+        ConsoleDebug.Instance.Log($"Clicked {tilePosition}");
+        await DestroyTiles(new List<Vector3Int> {tilePosition});
+    }
+
+    private async Task DestroyTiles(List<Vector3Int> tilePositions)
+    {
+        _isBusy = true;
+
+        var moveTasks = new List<Task>(tilePositions.Count);
+
+        foreach (var tilePosition in tilePositions)
         {
-            t.DestroyTile();
-            Tiles.Remove(tilePosition);
+            // 1. we remove it from the main list
+            if (_tiles.TryGetValue(tilePosition, out var t))
+                t.DestroyTile();
+
+            // 2. move tiles 1 down and update in our list
+            moveTasks.Add(MoveColumnDown(tilePosition));
         }
 
-        // 2. move tiles 1 down and update in our list
-        await MoveColumnDown(tilePosition);
+        await Task.WhenAll(moveTasks);
 
-        // 3. after moving, check every row if there's any match
-        var matches = await CheckHorizontal(tilePosition);
-
-        // 4. if match, remove all those tiles
-        // 5. repeat
-        foreach (var match in matches)
+        var matchTasks = new List<Task>();
+        foreach (var tilePosition in tilePositions)
         {
-            ConsoleDebug.Instance.Log($"Should destroy {match}");
-            OnTileDestroyed(match);
+            // 3. after moving, check every row if there's any match
+            var matches = CheckHorizontal(tilePosition);
+            // ConsoleDebug.Instance.Log(matches, "Marked to Remove");
+
+            // 4. if match, remove all those tiles
+            // 5. repeat
+            matchTasks.Add(Task.Delay(300));
+            matchTasks.Add(DestroyTiles(matches));
         }
+
+        await Task.WhenAll(matchTasks);
+
+        _isBusy = false;
     }
 
     private async Task MoveColumnDown(Vector3Int tilePosition)
     {
         var verticalAbove = GetAboveTiles(tilePosition.x, tilePosition.y);
 
+        if (verticalAbove.Count == 0) return;
+
+        var lastKey = verticalAbove.Last().TileKey;
+
         foreach (var tile in verticalAbove)
         {
-            var previousPosition = tile.Value.TileKey;
-            if (Tiles.ContainsKey(previousPosition))
-                Tiles.Remove(previousPosition);
+            var previousPosition = tile.TileKey;
 
-            var newPosition = await tile.Value.MoveDown();
+            var targetPosition = previousPosition;
+            targetPosition += Vector3Int.down;
+            // tile.name = $"Tile ({targetPosition.x} {targetPosition.y})";
 
-            Tiles[newPosition] = tile.Value;
+            if (_tiles.TryGetValue(previousPosition, out var t)) await t.MoveDown(targetPosition);
+
+            if (_tiles.ContainsKey(targetPosition) && _tiles.ContainsKey(previousPosition))
+                _tiles[targetPosition] = _tiles[previousPosition];
         }
+
+        _tiles.TryRemove(lastKey, out var removed);
     }
 
-    private async Task<List<Vector3Int>> CheckHorizontal(Vector3Int tilePosition)
+    private List<Vector3Int> CheckHorizontal(Vector3Int tilePosition)
     {
         var column = GetColumn(tilePosition.x, tilePosition.y);
 
         var toCheck = new List<Vector3Int>();
-        foreach (var tile in column)
-        {
-            var a = CheckHorizontalMatches(tile.Key);
-            toCheck.AddRange(a);
-        }
+        foreach (var rowMatches in column.Select(GetTilesToBeRemoved)) toCheck.AddRange(rowMatches);
 
-        return await Task.FromResult(toCheck);
+        return toCheck;
     }
 
-    private IEnumerable<Vector3Int> CheckHorizontalMatches(Vector3Int tilePosition)
+    private List<Vector3Int> GetTilesToBeRemoved(Vector3Int tilePosition)
     {
         ConsoleDebug.Instance.Log($"Check horizontal on {tilePosition.y}");
 

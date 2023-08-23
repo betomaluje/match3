@@ -1,8 +1,8 @@
 public enum TileType
 {
     None = 0,
-    Block = 1,
-    Square = 2,
-    Sphere = 3,
-    Capsule = 4
+    Green = 1,
+    White = 2,
+    Red = 3,
+    Blue = 4
 }

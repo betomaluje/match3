@@ -3,9 +3,14 @@ using UnityEngine;
 
 public class Tile : MonoBehaviour
 {
-    [SerializeField] private TileType _type = TileType.None;
-    [SerializeField] private Transform _destroyFX;
-    [SerializeField] private float _timeToMove = .2f;
+    [SerializeField]
+    private TileType _type = TileType.None;
+
+    [SerializeField]
+    private Transform _destroyFX;
+
+    [SerializeField]
+    private float _timeToMove = .2f;
 
     private GridManager _manager;
 
@@ -28,14 +33,21 @@ public class Tile : MonoBehaviour
     {
         if (_destroyFX != null) Instantiate(_destroyFX, transform.position, Quaternion.identity);
 
+        // Destroy(gameObject);
+        gameObject.SetActive(false);
+        Invoke(nameof(Destroy), 1);
+    }
+
+    internal void Destroy()
+    {
         Destroy(gameObject);
     }
 
-    public async Task<Vector3Int> MoveDown()
+    public async Task MoveDown(Vector3Int targetPosition)
     {
-        var currentPosition = transform.position;
-        var targetPosition = Vector3Int.FloorToInt(currentPosition);
-        targetPosition.y -= 1;
+        if (targetPosition.y < 0) return;
+
+        var currentPosition = TileKey;
 
         var elapsedTime = 0f;
 
@@ -47,7 +59,5 @@ public class Tile : MonoBehaviour
         }
 
         transform.position = targetPosition;
-
-        return targetPosition;
     }
 }
