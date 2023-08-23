@@ -5,16 +5,28 @@ using UnityEngine;
 
 public class GridManager : MonoBehaviour
 {
-    [Header("Rules")] [SerializeField] private int _width = 5;
+    [Header("Rules")]
+    [SerializeField]
+    [Min(1)]
+    private int _width = 5;
 
-    [SerializeField] private int _height = 5;
-    [SerializeField] [Min(3)] private int _minPerRow = 3;
+    [SerializeField]
+    [Min(1)]
+    private int _height = 5;
 
-    [Header("Tiles")] [SerializeField] private Tile[] _tilePrefabs;
+    [SerializeField]
+    [Min(3)]
+    private int _minPerRow = 3;
 
-    [SerializeField] private Transform _tileContainer;
+    [SerializeField]
+    private CheckMode _checkMode = CheckMode.LINQ;
 
-    [Header("Camera")] [SerializeField] private Transform _camera;
+    [Header("Tiles")]
+    [SerializeField]
+    private Tile[] _tilePrefabs;
+
+    [SerializeField]
+    private Transform _tileContainer;
 
     public Dictionary<Vector3Int, Tile> Tiles { get; private set; }
 
@@ -146,21 +158,11 @@ public class GridManager : MonoBehaviour
         var sameRow = GetHorizontalTiles(tilePosition.y);
 
         var match = new Match(_minPerRow);
-        foreach (var tile in sameRow)
-            match.AddToList(tile);
+        match.AddAll(sameRow);
 
-        var matches = match.Check();
+        var matches = _checkMode == CheckMode.LINQ ? match.CheckWithLinq() : match.CheckManually();
 
-        var toCheck = new List<Vector3Int>();
-        foreach (var m in matches)
-        {
-            ConsoleDebug.Instance.Log($"{m[0].Type} -> destroying {m.Count} tiles");
-
-            foreach (var tile in m)
-                toCheck.Add(tile.TileKey);
-        }
-
-        return toCheck;
+        return (from m in matches from tile in m select tile.TileKey).ToList();
     }
 
     private IEnumerable<Vector3Int> EvaluateGridPoints()

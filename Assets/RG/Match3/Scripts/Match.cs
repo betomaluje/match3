@@ -19,24 +19,30 @@ public class Match
         _minimumAmount = minimumAmount;
     }
 
-    public void AddToList(Tile tile)
+    public void AddAll(List<Tile> tiles)
     {
-        var list = new List<Tile>();
-        if (_tiles.TryGetValue(tile.Type, out var previousList))
-            list = previousList;
+        _tiles.Clear();
 
-        if (list.Count > 0)
+        foreach (var tile in tiles) AddToList(tile);
+    }
+
+    private void AddToList(Tile tile)
+    {
+        if (!_tiles.TryGetValue(tile.Type, out var blockTiles)) blockTiles = new List<Tile>();
+
+        if (blockTiles.Count > 0)
         {
-            var last = list.Last();
-            if (Mathf.Abs(last.TileKey.x - tile.TileKey.x) == 1)
-                list.Add(tile);
+            // we need to search any inside the current list that has 1 unit difference
+            var isNeighbour = blockTiles.Any(t => Mathf.Abs(t.TileKey.x - tile.TileKey.x) == 1);
+            if (isNeighbour)
+                blockTiles.Add(tile);
         }
         else
         {
-            list.Add(tile);
+            blockTiles.Add(tile);
         }
 
-        _tiles[tile.Type] = list;
+        _tiles[tile.Type] = blockTiles;
     }
 
     private static List<Tile> GetConsecutiveSameElementList(List<Tile> list, TileType targetElement,
@@ -53,25 +59,23 @@ public class Match
         return result;
     }
 
-    public List<List<Tile>> Check()
+    public List<List<Tile>> CheckManually()
     {
         var result = new List<List<Tile>>();
         foreach (var keys in _tiles.Keys)
         {
             var list = GetConsecutiveSameElementList(_tiles[keys], keys, _minimumAmount);
             if (list.Count > 0)
-            {
-                ConsoleDebug.Instance.Log(list, "Check");
                 result.Add(list);
-            }
         }
 
         return result;
     }
 
-    public IEnumerable<List<Tile>> Check2()
+    public List<List<Tile>> CheckWithLinq()
     {
         return _tiles.Where(t => t.Value.Count >= _minimumAmount)
-            .Select(a => a.Value);
+            .Select(a => a.Value)
+            .ToList();
     }
 }
