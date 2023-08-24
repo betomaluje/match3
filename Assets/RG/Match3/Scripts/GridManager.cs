@@ -4,6 +4,7 @@ using System.Diagnostics;
 using System.Linq;
 using System.Threading.Tasks;
 using UnityEngine;
+using Random = UnityEngine.Random;
 
 public class GridManager : MonoBehaviour
 {
@@ -112,7 +113,7 @@ public class GridManager : MonoBehaviour
     ///     Called when a Tile is clicked
     /// </summary>
     /// <param name="tilePosition">The current tile position</param>
-    public void OnTileDestroyed(Vector3Int tilePosition)
+    public void OnTileClicked(Vector3Int tilePosition)
     {
         if (_isBusy) return;
         ConsoleDebug.Instance.Log($"Clicked {tilePosition}");

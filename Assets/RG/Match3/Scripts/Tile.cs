@@ -26,7 +26,7 @@ public class Tile : MonoBehaviour
     public void OnMouseDown()
     {
         // we will use it's position to detect row and column
-        _manager.OnTileDestroyed(TileKey);
+        _manager.OnTileClicked(TileKey);
     }
 
     public void DestroyTile()
