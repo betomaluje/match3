@@ -1,5 +1,6 @@
 using System.Collections.Concurrent;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Threading.Tasks;
 using UnityEngine;
@@ -20,7 +21,7 @@ public class GridManager : MonoBehaviour
     private int _minPerRow = 3;
 
     [SerializeField]
-    private CheckMode _checkMode = CheckMode.LINQ;
+    private CheckMode _checkMode = CheckMode.OnlyRow;
 
     [Header("Tiles")]
     [SerializeField]
@@ -99,7 +100,7 @@ public class GridManager : MonoBehaviour
     /// </summary>
     /// <param name="y">The row number</param>
     /// <returns>A dictionary for all the available tiles in that row</returns>
-    private List<Tile> GetHorizontalTiles(int y)
+    private List<Tile> GetRow(int y)
     {
         return _tiles.Where(pos => pos.Value != null && pos.Value.TileKey.y == y)
             .Select(p => p.Value)
@@ -111,37 +112,65 @@ public class GridManager : MonoBehaviour
     ///     Called when a Tile is clicked
     /// </summary>
     /// <param name="tilePosition">The current tile position</param>
-    public async void OnTileDestroyed(Vector3Int tilePosition)
+    public void OnTileDestroyed(Vector3Int tilePosition)
     {
         if (_isBusy) return;
         ConsoleDebug.Instance.Log($"Clicked {tilePosition}");
-        await DestroyTiles(new List<Vector3Int> {tilePosition});
+        DestroyTile(tilePosition);
     }
 
-    private async Task DestroyTiles(List<Vector3Int> tilePositions)
+    private async void DestroyTile(Vector3Int tilePosition)
     {
         _isBusy = true;
+        // 1. we remove it from the main list
+        if (_tiles.TryGetValue(tilePosition, out var t))
+            t.DestroyTile();
+
+        var stopwatch = new Stopwatch();
+
+        // 2. move tiles 1 down and update in our list
+        stopwatch.Start();
+        await MoveColumnDown(tilePosition);
+        stopwatch.Stop();
+        ConsoleDebug.Instance.Log($"Move took {stopwatch.ElapsedMilliseconds} ms");
+
+        // 3. after moving, check every row if there's any match
+        stopwatch.Start();
+        var matches = await GetMatches(tilePosition);
+
+        // 4. if match, remove all those tiles
+        matches = matches.Distinct().ToList();
+
+        stopwatch.Stop();
+        ConsoleDebug.Instance.Log($"Get matches took {stopwatch.ElapsedMilliseconds} ms -> {matches.Count} in total");
+
+        if (matches.Count > 0)
+            DestroyTiles(matches);
+        else
+            _isBusy = false;
+    }
+
+    private async void DestroyTiles(List<Vector3Int> tilePositions)
+    {
+        _isBusy = true;
+
+        var stopwatch = new Stopwatch();
+
+        stopwatch.Start();
+        var tasks = new List<Task>();
         foreach (var tilePosition in tilePositions)
-            // 1. we remove it from the main list
+        {
             if (_tiles.TryGetValue(tilePosition, out var t))
                 t.DestroyTile();
 
-        var matches = new List<Vector3Int>();
-
-        foreach (var tilePosition in tilePositions)
-        {
             // 2. move tiles 1 down and update in our list
-            await MoveColumnDown(tilePosition);
-
-            // 3. after moving, check every row if there's any match
-            matches.AddRange(CheckHorizontal(tilePosition));
+            tasks.Add(MoveColumnDown(tilePosition));
         }
 
-        // 4. if match, remove all those tiles
-        // 5. repeat
-        matches = matches.Distinct().ToList();
-        if (matches.Count > 0)
-            await DestroyTiles(matches);
+        await Task.WhenAll(tasks);
+
+        stopwatch.Stop();
+        ConsoleDebug.Instance.Log($"Move ALL took {stopwatch.ElapsedMilliseconds} ms");
 
         _isBusy = false;
     }
@@ -171,29 +200,47 @@ public class GridManager : MonoBehaviour
         _tiles.TryRemove(lastKey, out var removed);
     }
 
-    private List<Vector3Int> CheckHorizontal(Vector3Int tilePosition)
+    private async Task<List<Vector3Int>> GetMatches(Vector3Int tilePosition)
     {
-        var column = GetColumn(tilePosition.x, tilePosition.y);
+        if (_checkMode == CheckMode.WholeColumn)
+        {
+            var column = GetColumn(tilePosition.x, tilePosition.y);
 
-        var toCheck = new List<Vector3Int>();
-        foreach (var rowMatches in column.Select(GetTilesToBeRemoved)) toCheck.AddRange(rowMatches);
+            var toCheck = new List<Vector3Int>();
+            foreach (var position in column)
+            {
+                var rowMatches = await GetTilesToBeRemoved(position);
+                toCheck.AddRange(rowMatches);
+            }
 
-        return toCheck;
+            return await Task.FromResult(toCheck);
+        }
+        else
+        {
+            var toCheck = new List<Vector3Int>();
+            var rowMatches = await GetTilesToBeRemoved(tilePosition);
+            toCheck.AddRange(rowMatches);
+            return await Task.FromResult(toCheck);
+        }
     }
 
-    private List<Vector3Int> GetTilesToBeRemoved(Vector3Int tilePosition)
+    private async Task<List<Vector3Int>> GetTilesToBeRemoved(Vector3Int tilePosition)
     {
+        // we get the filtered row for the same tile type
+        var sameRow = GetRow(tilePosition.y);
+
         ConsoleDebug.Instance.Log($"Check horizontal on {tilePosition.y}");
 
-        // we get the filtered row for the same tile type
-        var sameRow = GetHorizontalTiles(tilePosition.y);
-
         var match = new Match(_minPerRow);
-        match.AddAll(sameRow);
+        var matches = match.CheckRow(sameRow);
 
-        var matches = _checkMode == CheckMode.LINQ ? match.CheckWithLinq() : match.CheckManually();
+        if (matches == null) return await Task.FromResult(new List<Vector3Int>(0));
 
-        return (from m in matches from tile in m select tile.TileKey).ToList();
+        // var list = (from m in matches from tile in m select tile.TileKey).ToList();
+
+        var list = matches.SelectMany(listOfMatches => listOfMatches).ToList();
+
+        return await Task.FromResult(list);
     }
 
     private IEnumerable<Vector3Int> EvaluateGridPoints()

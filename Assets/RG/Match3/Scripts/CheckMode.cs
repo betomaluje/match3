@@ -3,6 +3,6 @@
 [Serializable]
 public enum CheckMode
 {
-    LINQ = 0,
-    MANUAL = 1
+    OnlyRow = 0,
+    WholeColumn = 1
 }

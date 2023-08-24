@@ -8,7 +8,7 @@ public class Match
 
     private readonly int _minimumAmount = DEFAULT_MINIUM;
 
-    private readonly Dictionary<TileType, List<Tile>> _tiles = new Dictionary<TileType, List<Tile>>();
+    private readonly Dictionary<TileType, HashSet<Tile>> _tiles = new Dictionary<TileType, HashSet<Tile>>();
 
     public Match()
     {
@@ -19,63 +19,48 @@ public class Match
         _minimumAmount = minimumAmount;
     }
 
-    public void AddAll(List<Tile> tiles)
+    public List<List<Vector3Int>> CheckRow(List<Tile> row)
     {
-        _tiles.Clear();
+        if (row.Count == 0) return null;
 
-        foreach (var tile in tiles) AddToList(tile);
+        var matchCounter = 0;
+        for (var x = 1; x < row.Count; x++)
+        {
+            var prev = row[x - 1];
+            var tile = row[x];
+
+            if (prev.Type == tile.Type)
+            {
+                matchCounter++;
+                ConsoleDebug.Instance.Log($"{tile.Type} -> {matchCounter}");
+                // we need to save both
+                _tiles[prev.Type] = AddToDictionary(prev);
+                _tiles[tile.Type] = AddToDictionary(tile);
+            }
+            else
+            {
+                matchCounter = 1;
+            }
+        }
+
+        return _tiles.Where(t => t.Value.Count >= _minimumAmount)
+            .Select(t => t.Value.Select(t2 => t2.TileKey).ToList())
+            .Distinct()
+            .ToList();
     }
 
-    private void AddToList(Tile tile)
+    private HashSet<Tile> AddToDictionary(Tile tile)
     {
-        if (!_tiles.TryGetValue(tile.Type, out var blockTiles)) blockTiles = new List<Tile>();
+        if (!_tiles.TryGetValue(tile.Type, out var blockTiles)) blockTiles = new HashSet<Tile>();
 
         if (blockTiles.Count > 0)
         {
-            // we need to search any inside the current list that has 1 unit difference
-            var isNeighbour = blockTiles.Any(t => Mathf.Abs(t.TileKey.x - tile.TileKey.x) == 1);
-            if (isNeighbour)
-                blockTiles.Add(tile);
-        }
-        else
-        {
-            blockTiles.Add(tile);
+            var last = blockTiles.Last();
+            var diff = Mathf.Abs(last.TileKey.x - tile.TileKey.x) == 1;
+            if (diff) blockTiles.Add(tile);
         }
 
-        _tiles[tile.Type] = blockTiles;
-    }
-
-    private static List<Tile> GetConsecutiveSameElementList(List<Tile> list, TileType targetElement,
-        int consecutiveCount)
-    {
-        var result = new List<Tile>();
-
-        for (var i = 0; i <= list.Count - consecutiveCount; i++)
-        {
-            var sublist = list.Skip(i).Take(consecutiveCount).ToList();
-            if (sublist.All(item => item.Type == targetElement)) result.AddRange(sublist);
-        }
-
-        return result;
-    }
-
-    public List<List<Tile>> CheckManually()
-    {
-        var result = new List<List<Tile>>();
-        foreach (var keys in _tiles.Keys)
-        {
-            var list = GetConsecutiveSameElementList(_tiles[keys], keys, _minimumAmount);
-            if (list.Count > 0)
-                result.Add(list);
-        }
-
-        return result;
-    }
-
-    public List<List<Tile>> CheckWithLinq()
-    {
-        return _tiles.Where(t => t.Value.Count >= _minimumAmount)
-            .Select(a => a.Value)
-            .ToList();
+        blockTiles.Add(tile);
+        return blockTiles;
     }
 }
