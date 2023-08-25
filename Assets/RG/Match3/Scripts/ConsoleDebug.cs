@@ -7,22 +7,22 @@ public class ConsoleDebug : MonoBehaviour
     private static ConsoleDebug instance;
 
     [SerializeField]
-    private bool _debug = true;
+    [Tooltip("Should we print all the debug messages?")]
+    private bool _debug;
 
     public static ConsoleDebug Instance
     {
         get
         {
-            if (instance == null)
-            {
-                instance = FindObjectOfType<ConsoleDebug>();
-                if (instance == null)
-                {
-                    var singletonObject = new GameObject();
-                    instance = singletonObject.AddComponent<ConsoleDebug>();
-                    singletonObject.name = typeof(ConsoleDebug) + " (Singleton)";
-                }
-            }
+            if (instance != null) return instance;
+
+            instance = FindObjectOfType<ConsoleDebug>();
+
+            if (instance != null) return instance;
+
+            var singletonObject = new GameObject();
+            instance = singletonObject.AddComponent<ConsoleDebug>();
+            singletonObject.name = typeof(ConsoleDebug) + " (Singleton)";
 
             return instance;
         }
