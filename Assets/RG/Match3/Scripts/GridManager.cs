@@ -3,6 +3,9 @@ using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using Extensions;
+using Matches;
+using Tiles;
 using UnityEngine;
 using Random = UnityEngine.Random;
 
