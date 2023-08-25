@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -46,6 +47,7 @@ public class GridManager : MonoBehaviour
 
     private bool _isBusy;
     private ConcurrentDictionary<Vector3Int, Tile> _tiles;
+    public Action OnTileDestroyed = delegate { };
 
     private void Start()
     {
@@ -153,6 +155,7 @@ public class GridManager : MonoBehaviour
     {
         if (_isBusy) return;
         ConsoleDebug.Instance.Log($"Clicked {tilePosition}");
+        OnTileDestroyed?.Invoke();
         DestroyTile(tilePosition);
     }
 
@@ -207,6 +210,8 @@ public class GridManager : MonoBehaviour
     private async void DestroyTiles(List<Vector3Int> tilePositions)
     {
         _isBusy = true;
+
+        OnTileDestroyed?.Invoke();
 
         var stopwatch = new Stopwatch();
 
