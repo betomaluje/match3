@@ -4,19 +4,13 @@ using UnityEngine;
 public class Tile : MonoBehaviour
 {
     [SerializeField]
-    private TileType _type = TileType.None;
-
-    [SerializeField]
-    private Transform _destroyFX;
-
-    [SerializeField]
-    private float _timeToMove = .2f;
+    private TileSO _tileConfig;
 
     private GridManager _manager;
 
     public Vector3Int TileKey => Vector3Int.FloorToInt(transform.position);
 
-    public TileType Type => _type;
+    public TileType Type => _tileConfig.type;
 
     private void Awake()
     {
@@ -31,7 +25,7 @@ public class Tile : MonoBehaviour
 
     public void DestroyTile()
     {
-        if (_destroyFX != null) Instantiate(_destroyFX, transform.position, Quaternion.identity);
+        if (_tileConfig.destroyFX != null) Instantiate(_tileConfig.destroyFX, transform.position, Quaternion.identity);
 
         // Destroy(gameObject);
         gameObject.SetActive(false);
@@ -51,9 +45,9 @@ public class Tile : MonoBehaviour
 
         var elapsedTime = 0f;
 
-        while (elapsedTime < _timeToMove)
+        while (elapsedTime < _tileConfig.timeToMove)
         {
-            transform.position = Vector3.Lerp(currentPosition, targetPosition, elapsedTime / _timeToMove);
+            transform.position = Vector3.Lerp(currentPosition, targetPosition, elapsedTime / _tileConfig.timeToMove);
             elapsedTime += Time.deltaTime;
             await Task.Yield();
         }

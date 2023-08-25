@@ -77,5 +77,11 @@ PrefabInstance:
       propertyPath: _type
       value: 1
       objectReference: {fileID: 0}
+    - target: {fileID: 7884584042874521254, guid: 48c8619a59a9fb5419095da7077614b7,
+        type: 3}
+      propertyPath: _tileConfig
+      value: 
+      objectReference: {fileID: 11400000, guid: d2ba59fb558790747a7c1d728472bddb,
+        type: 2}
     m_RemovedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: 48c8619a59a9fb5419095da7077614b7, type: 3}
