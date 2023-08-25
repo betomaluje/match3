@@ -8,6 +8,7 @@ public class Tile : MonoBehaviour
 
     private GridManager _manager;
 
+    // we will use it's position to detect row and column
     public Vector3Int TileKey => Vector3Int.FloorToInt(transform.position);
 
     public TileType Type => _tileConfig.type;
@@ -19,7 +20,6 @@ public class Tile : MonoBehaviour
 
     public void OnMouseDown()
     {
-        // we will use it's position to detect row and column
         _manager.OnTileClicked(TileKey);
     }
 
@@ -27,7 +27,6 @@ public class Tile : MonoBehaviour
     {
         if (_tileConfig.destroyFX != null) Instantiate(_tileConfig.destroyFX, transform.position, Quaternion.identity);
 
-        // Destroy(gameObject);
         gameObject.SetActive(false);
         Invoke(nameof(Destroy), 1);
     }

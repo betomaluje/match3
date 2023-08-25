@@ -1,7 +1,6 @@
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.Linq;
 using System.Threading.Tasks;
 using UnityEngine;
@@ -44,6 +43,9 @@ public class GridManager : MonoBehaviour
     [SerializeField]
     [Tooltip("Just to try and fix the camera to look at all the tiles")]
     private Transform _camera;
+
+    [SerializeField]
+    private Transform _background;
 
     private bool _isBusy;
     private ConcurrentDictionary<Vector3Int, Tile> _tiles;
@@ -103,8 +105,11 @@ public class GridManager : MonoBehaviour
 
         _isBusy = false;
 
+        var centerPosition = new Vector3(_width / 2f - .5f, _height / 2f - .5f, 0);
+        _background.position = centerPosition;
         // Setup camera
-        _camera.position = new Vector3(_width / 2f - .5f, _height / 2f - .5f, -10);
+        centerPosition.z = -10;
+        _camera.position = centerPosition;
     }
 
     /// <summary>
@@ -142,7 +147,7 @@ public class GridManager : MonoBehaviour
     {
         if (_isBusy) return;
         ConsoleDebug.Instance.Log($"Clicked {tilePosition}");
-        OnTileDestroyed?.Invoke();
+
         DestroyTile(tilePosition);
     }
 
@@ -155,6 +160,9 @@ public class GridManager : MonoBehaviour
     private async void DestroyTile(Vector3Int tilePosition)
     {
         _isBusy = true;
+
+        OnTileDestroyed?.Invoke();
+
         // 1. we remove it from the main list
         if (_tiles.TryGetValue(tilePosition, out var t))
         {
@@ -166,19 +174,11 @@ public class GridManager : MonoBehaviour
             return;
         }
 
-        var stopwatch = new Stopwatch();
-
         // 2. move tiles 1 down and update in our list
-        stopwatch.Start();
         await MoveColumnDown(tilePosition);
-        stopwatch.Stop();
-        ConsoleDebug.Instance.Log($"Move took {stopwatch.ElapsedMilliseconds} ms");
 
         // 3. after moving, check every row if there's any match
-        stopwatch.Start();
         var matches = await GetMatches(tilePosition);
-        stopwatch.Stop();
-        ConsoleDebug.Instance.Log($"Get matches took {stopwatch.ElapsedMilliseconds} ms -> {matches.Count} in total");
 
         // 4. if match, remove all those tiles
         if (matches.Count > 0)
@@ -199,9 +199,6 @@ public class GridManager : MonoBehaviour
 
         OnTileDestroyed?.Invoke();
 
-        var stopwatch = new Stopwatch();
-
-        stopwatch.Start();
         var tasks = new List<Task>();
         foreach (var tilePosition in tilePositions)
         {
@@ -212,9 +209,6 @@ public class GridManager : MonoBehaviour
         }
 
         await Task.WhenAll(tasks);
-
-        stopwatch.Stop();
-        ConsoleDebug.Instance.Log($"Move ALL took {stopwatch.ElapsedMilliseconds} ms");
 
         _isBusy = false;
     }
