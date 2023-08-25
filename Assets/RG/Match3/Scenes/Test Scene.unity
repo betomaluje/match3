@@ -153,7 +153,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   _width: 16
-  _height: 10
+  _height: 6
   _minPerRow: 3
   _checkMode: 0
   _tilePrefabs:
@@ -428,7 +428,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 376c0d78c26040b78260d2375d1c6003, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  _debug: 1
+  _debug: 0
 --- !u!4 &1474104427
 Transform:
   m_ObjectHideFlags: 0
