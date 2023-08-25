@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
@@ -8,7 +9,7 @@ public class Match
 
     private readonly int _minimumAmount = DEFAULT_MINIUM;
 
-    private readonly Dictionary<TileType, HashSet<Tile>> _tiles = new Dictionary<TileType, HashSet<Tile>>();
+    private readonly Dictionary<TileType, HashSet<Vector3Int>> _tiles = new Dictionary<TileType, HashSet<Vector3Int>>();
 
     public Match()
     {
@@ -19,48 +20,47 @@ public class Match
         _minimumAmount = minimumAmount;
     }
 
-    public List<List<Vector3Int>> CheckRow(List<Tile> row)
+    /// <summary>
+    ///     Checks all the matches for a given set of Tile objects.
+    /// </summary>
+    /// <param name="row">The list of tiles in a row to check</param>
+    /// <returns>A list containing every position a tile matched</returns>
+    public List<Vector3Int> CheckRow(List<Tile> row)
     {
         if (row.Count == 0) return null;
 
-        var matchCounter = 0;
-        for (var x = 1; x < row.Count; x++)
-        {
-            var prev = row[x - 1];
-            var tile = row[x];
+        row = row.OrderBy(p => p.TileKey.x).ToList();
 
-            if (prev.Type == tile.Type)
-            {
-                matchCounter++;
-                ConsoleDebug.Instance.Log($"{tile.Type} -> {matchCounter}");
-                // we need to save both
-                _tiles[prev.Type] = AddToDictionary(prev);
-                _tiles[tile.Type] = AddToDictionary(tile);
-            }
-            else
-            {
-                matchCounter = 1;
-            }
-        }
+        foreach (TileType type in Enum.GetValues(typeof(TileType)))
+            _tiles[type] = GetConsecutiveSameElementList(row, type, _minimumAmount);
 
-        return _tiles.Where(t => t.Value.Count >= _minimumAmount)
-            .Select(t => t.Value.Select(t2 => t2.TileKey).ToList())
+        return _tiles.SelectMany(t => t.Value)
             .Distinct()
             .ToList();
     }
 
-    private HashSet<Tile> AddToDictionary(Tile tile)
+    /// <summary>
+    ///     Filters a collection for the given TileType and minimum amount. It returns a HashSet containing the
+    ///     positions of each tile.
+    /// </summary>
+    /// <param name="list">The collection of Tile objects to search</param>
+    /// <param name="tileType">The type of tile to filter</param>
+    /// <param name="consecutiveCount">The minimum amount of consecutive elements</param>
+    /// <returns>A HashSet containing the positions of each consecutive tile sublist</returns>
+    private static HashSet<Vector3Int> GetConsecutiveSameElementList(IReadOnlyCollection<Tile> list,
+        TileType tileType, int consecutiveCount)
     {
-        if (!_tiles.TryGetValue(tile.Type, out var blockTiles)) blockTiles = new HashSet<Tile>();
+        var result = new HashSet<Vector3Int>();
 
-        if (blockTiles.Count > 0)
+        for (var i = 0; i <= list.Count - consecutiveCount; i++)
         {
-            var last = blockTiles.Last();
-            var diff = Mathf.Abs(last.TileKey.x - tile.TileKey.x) == 1;
-            if (diff) blockTiles.Add(tile);
+            var sublist = list.Skip(i).Take(consecutiveCount).ToList();
+            if (sublist.Any(item => item.Type != tileType)) continue;
+
+            foreach (var tile in sublist)
+                result.Add(tile.TileKey);
         }
 
-        blockTiles.Add(tile);
-        return blockTiles;
+        return result;
     }
 }
