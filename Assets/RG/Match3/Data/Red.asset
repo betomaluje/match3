@@ -15,4 +15,4 @@ MonoBehaviour:
   type: 3
   destroyFX: {fileID: 7118285468858330651, guid: 2aed2a09102e32145ac5bdd10acf5287,
     type: 3}
-  timeToMove: 0.2
+  timeToMove: 0.1
