@@ -26,11 +26,6 @@ namespace Tiles {
                 Instantiate(_tileConfig.destroyFX, transform.position, Quaternion.identity);
             }
 
-            gameObject.SetActive(false);
-            Invoke(nameof(Destroy), 1);
-        }
-
-        internal void Destroy() {
             Destroy(gameObject);
         }
 

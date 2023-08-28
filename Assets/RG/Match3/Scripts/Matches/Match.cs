@@ -53,13 +53,16 @@ namespace Matches {
             TileType tileType, int consecutiveCount) {
             var result = new HashSet<Vector3Int>();
 
-            for (var i = 0; i <= list.Count - consecutiveCount; i++) {
+            var len = list.Count - consecutiveCount;
+            for (var i = 0; i <= len; i++) {
                 var sublist = list.Skip(i).Take(consecutiveCount).ToList();
                 if (sublist.Any(item => item.Type != tileType)) {
                     continue;
                 }
 
-                foreach (var tile in sublist) {
+                var sublistCount = sublist.Count;
+                for (var j = 0; j < sublistCount; j++) {
+                    var tile = sublist[j];
                     result.Add(tile.TileKey);
                 }
             }

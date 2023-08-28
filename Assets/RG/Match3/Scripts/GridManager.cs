@@ -7,6 +7,7 @@ using Extensions;
 using Matches;
 using Tiles;
 using UnityEngine;
+using UnityEngine.Assertions;
 using Random = UnityEngine.Random;
 
 public class GridManager : MonoBehaviour {
@@ -69,8 +70,9 @@ public class GridManager : MonoBehaviour {
         }
 
         var size = Vector2.one;
-        foreach (var point in EvaluateGridPoints()) {
-            Gizmos.DrawWireCube(point, size);
+        var points = EvaluateGridPoints().ToList();
+        for (var i = 0; i < points.Count(); i++) {
+            Gizmos.DrawWireCube(points[i], size);
         }
     }
 
@@ -95,7 +97,10 @@ public class GridManager : MonoBehaviour {
 
         _tileContainer.Clear();
 
-        foreach (var point in EvaluateGridPoints()) {
+        var points = EvaluateGridPoints().ToList();
+        var len = points.Count;
+        for (var i = 0; i < len; i++) {
+            var point = points[i];
             var tilePrefab = _tilePrefabs[Random.Range(0, _tilePrefabs.Length)];
             var tile = Instantiate(tilePrefab, point, Quaternion.identity);
             tile.name = $"Tile ({point.x} {point.y})";
@@ -184,16 +189,21 @@ public class GridManager : MonoBehaviour {
     private async Task Matches(Vector3Int tilePosition) {
         ConsoleDebug.Instance.Log($"Checking {tilePosition.y}");
 
+        Assert.IsTrue(tilePosition.y >= 0);
+
         for (var y = tilePosition.y; y < _height; y++) {
             var matches = await GetMatches(y);
             ConsoleDebug.Instance.Log($"    matches: {matches.Count}");
 
-            if (matches.Count <= 0) continue;
+            var matchCount = matches.Count;
+
+            if (matchCount <= 0) continue;
 
             OnTileDestroyed?.Invoke();
 
-            var tasks = new List<Task>();
-            foreach (var match in matches) {
+            var tasks = new List<Task>(matchCount);
+            for (var i = 0; i < matchCount; i++) {
+                var match = matches[i];
                 if (!_tiles.TryGetValue(match, out var t)) {
                     continue;
                 }
@@ -202,6 +212,7 @@ public class GridManager : MonoBehaviour {
                 tasks.Add(MoveColumnDown(match));
             }
 
+            Assert.AreEqual(matchCount, tasks.Count);
             await Task.WhenAll(tasks);
 
             y--;
@@ -218,13 +229,16 @@ public class GridManager : MonoBehaviour {
     private async Task MoveColumnDown(Vector3Int tilePosition) {
         var verticalAbove = GetAboveTiles(tilePosition.x, tilePosition.y);
 
-        if (verticalAbove.Count == 0) {
+        var len = verticalAbove.Count;
+
+        if (len == 0) {
             return;
         }
 
         var lastKey = verticalAbove.Last().TileKey;
 
-        foreach (var tile in verticalAbove) {
+        for (var i = 0; i < len; i++) {
+            var tile = verticalAbove[i];
             var previousPosition = tile.TileKey;
 
             var targetPosition = previousPosition;

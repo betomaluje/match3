@@ -3,7 +3,11 @@
 namespace Extensions {
     public static class TransformExt {
         public static Transform Clear(this Transform transform) {
-            foreach (Transform child in transform) Object.Destroy(child.gameObject);
+            for (var i = 0; i < transform.childCount; i++) {
+                var child = transform.GetChild(i);
+                Object.Destroy(child.gameObject);
+            }
+
             return transform;
         }
     }
