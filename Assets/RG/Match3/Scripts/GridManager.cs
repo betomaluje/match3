@@ -27,12 +27,6 @@ public class GridManager : MonoBehaviour
     [Tooltip("How many similar items to search for. Minimum 3")]
     private int _minPerRow = 3;
 
-    [SerializeField]
-    [Tooltip(
-        "How to check for matches. Only row searches only the clicked row (as in the video). " +
-        "Whole column searches for each row in that column (slower and sometimes buggy)")]
-    private CheckMode _checkMode = CheckMode.OnlyRow;
-
     [Header("Tiles")]
     [SerializeField]
     [Tooltip("The possible Tiles to populate the game")]
@@ -142,11 +136,11 @@ public class GridManager : MonoBehaviour
     /// </summary>
     /// <param name="y">The row number</param>
     /// <returns>A dictionary for all the available tiles in that row</returns>
-    private List<Tile> GetRow(int y)
+    private async Task<List<Tile>> GetRow(int y)
     {
-        return _tiles.Where(pos => pos.Value != null && pos.Value.TileKey.y == y)
+        return await Task.FromResult(_tiles.Where(pos => pos.Value != null && pos.Value.TileKey.y == y)
             .Select(p => p.Value)
-            .ToList();
+            .ToList());
     }
 
     /// <summary>
@@ -174,9 +168,9 @@ public class GridManager : MonoBehaviour
         OnTileDestroyed?.Invoke();
 
         // 1. we remove it from the main list
-        if (_tiles.TryGetValue(tilePosition, out var t))
+        if (_tiles.TryGetValue(tilePosition, out var currentTile))
         {
-            t.DestroyTile();
+            currentTile.DestroyTile();
         }
         else
         {
@@ -184,42 +178,38 @@ public class GridManager : MonoBehaviour
             return;
         }
 
-        // 2. move tiles 1 down and update in our list
         await MoveColumnDown(tilePosition);
 
-        // 3. after moving, check every row if there's any match
-        var matches = await GetMatches(tilePosition);
-
-        // 4. if match, remove all those tiles
-        if (matches.Count > 0)
-            DestroyTiles(matches);
-        else
-            _isBusy = false;
+        await Matches(tilePosition);
     }
 
-    /// <summary>
-    ///     Destroys a list of tiles given their positions. When a tile is destroyed, all the above tiles move down,
-    ///     we check for potential matches and finally we delete the matches and move every column with missing
-    ///     tiles down
-    /// </summary>
-    /// <param name="tilePositions">A list of tile positions to be destroyed</param>
-    private async void DestroyTiles(List<Vector3Int> tilePositions)
+    private async Task Matches(Vector3Int tilePosition)
     {
-        _isBusy = true;
+        ConsoleDebug.Instance.Log($"Checking {tilePosition.y}");
 
-        OnTileDestroyed?.Invoke();
-
-        var tasks = new List<Task>();
-        foreach (var tilePosition in tilePositions)
+        for (var y = tilePosition.y; y < _height; y++)
         {
-            if (_tiles.TryGetValue(tilePosition, out var t))
-                t.DestroyTile();
+            var matches = await GetMatches(y);
+            ConsoleDebug.Instance.Log($"    matches: {matches.Count}");
 
-            tasks.Add(MoveColumnDown(tilePosition));
+            if (matches.Count <= 0) continue;
+
+            OnTileDestroyed?.Invoke();
+
+            var tasks = new List<Task>();
+            foreach (var match in matches)
+                if (_tiles.TryGetValue(match, out var t))
+                {
+                    t.DestroyTile();
+                    tasks.Add(MoveColumnDown(match));
+                }
+
+            await Task.WhenAll(tasks);
+
+            y--;
         }
 
-        await Task.WhenAll(tasks);
-
+        ConsoleDebug.Instance.Log("Done! No more matches");
         _isBusy = false;
     }
 
@@ -254,43 +244,21 @@ public class GridManager : MonoBehaviour
     /// <summary>
     ///     Gets a list of positions that are matches for the given initial tilePosition
     /// </summary>
-    /// <param name="tilePosition">The initial position to search for matches</param>
-    /// <returns></returns>
-    private async Task<List<Vector3Int>> GetMatches(Vector3Int tilePosition)
-    {
-        if (_checkMode == CheckMode.WholeColumn)
-        {
-            var toCheck = new List<Vector3Int>();
-            for (var y = tilePosition.y; y < _height; y++)
-            {
-                var rowMatches = await GetTilesToBeRemoved(y);
-                toCheck.AddRange(rowMatches);
-            }
-
-            return await Task.FromResult(toCheck);
-        }
-
-        return await GetTilesToBeRemoved(tilePosition.y);
-    }
-
-    /// <summary>
-    ///     Gets a list of positions within a row to be removed (a.k.a that have a match)
-    /// </summary>
     /// <param name="y">The row position</param>
-    /// <returns>A list of positions within a row of tiles that match</returns>
-    private async Task<List<Vector3Int>> GetTilesToBeRemoved(int y)
+    /// <returns></returns>
+    private async Task<List<Vector3Int>> GetMatches(int y)
     {
         // we get the filtered row for the same tile type
-        var sameRow = GetRow(y);
+        var sameRow = await GetRow(y);
 
-        ConsoleDebug.Instance.Log($"Check horizontal on {y}");
+        ConsoleDebug.Instance.Log($"Check row {y}");
 
         var match = new Match(_minPerRow);
-        var matches = match.CheckRow(sameRow);
+        var matches = await match.CheckRow(sameRow);
 
         if (matches == null) return await Task.FromResult(new List<Vector3Int>(0));
 
-        return await Task.FromResult(matches);
+        return matches;
     }
 
     private IEnumerable<Vector3Int> EvaluateGridPoints()

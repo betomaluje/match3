@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading.Tasks;
 using Tiles;
 using UnityEngine;
 
@@ -29,7 +30,7 @@ namespace Matches
         /// </summary>
         /// <param name="row">The list of tiles in a row to check</param>
         /// <returns>A list containing every position a tile matched</returns>
-        public List<Vector3Int> CheckRow(List<Tile> row)
+        public async Task<List<Vector3Int>> CheckRow(List<Tile> row)
         {
             if (row.Count == 0) return null;
 
@@ -38,9 +39,9 @@ namespace Matches
             foreach (TileType type in Enum.GetValues(typeof(TileType)))
                 _tiles[type] = GetConsecutiveSameElementList(row, type, _minimumAmount);
 
-            return _tiles.SelectMany(t => t.Value)
+            return await Task.FromResult(_tiles.SelectMany(t => t.Value)
                 .Distinct()
-                .ToList();
+                .ToList());
         }
 
         /// <summary>

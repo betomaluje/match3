@@ -152,10 +152,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 769f2da35e4442f3bdcaae98f9ef7320, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  _width: 10
-  _height: 10
+  _width: 8
+  _height: 8
   _minPerRow: 3
-  _checkMode: 0
   _tilePrefabs:
   - {fileID: 7030079166795597580, guid: 483dce54b403c1c4eb12ef11d11a738e, type: 3}
   - {fileID: 1823340088043111899, guid: d15a6177729023842887db2519a02309, type: 3}
@@ -164,6 +163,7 @@ MonoBehaviour:
   _tileContainer: {fileID: 386399013}
   _camera: {fileID: 1089636878}
   _background: {fileID: 380255924}
+  _padding: 1
 --- !u!4 &150003615
 Transform:
   m_ObjectHideFlags: 0
