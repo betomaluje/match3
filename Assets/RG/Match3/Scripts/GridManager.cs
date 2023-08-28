@@ -50,6 +50,9 @@ public class GridManager : MonoBehaviour
     [SerializeField]
     private Transform _background;
 
+    [SerializeField]
+    private float _padding = 1f;
+
     private bool _isBusy;
     private ConcurrentDictionary<Vector3Int, Tile> _tiles;
 
@@ -110,6 +113,10 @@ public class GridManager : MonoBehaviour
 
         var centerPosition = new Vector3(_width / 2f - .5f, _height / 2f - .5f, 0);
         _background.position = centerPosition;
+
+        var scale = new Vector3(_width + _padding, _height + _padding, .1f);
+        _background.localScale = scale;
+
         // Setup camera
         centerPosition.z = -10;
         _camera.position = centerPosition;
