@@ -1,10 +1,8 @@
 using System.Threading.Tasks;
 using UnityEngine;
 
-namespace Tiles
-{
-    public class Tile : MonoBehaviour
-    {
+namespace Tiles {
+    public class Tile : MonoBehaviour {
         [SerializeField]
         private TileSO _tileConfig;
 
@@ -15,40 +13,35 @@ namespace Tiles
 
         public TileType Type => _tileConfig.type;
 
-        private void Awake()
-        {
+        private void Awake() {
             _manager = FindObjectOfType<GridManager>();
         }
 
-        public void OnMouseDown()
-        {
+        public void OnMouseDown() {
             _manager.OnTileClicked(TileKey);
         }
 
-        public void DestroyTile()
-        {
-            if (_tileConfig.destroyFX != null)
+        public void DestroyTile() {
+            if (_tileConfig.destroyFX != null) {
                 Instantiate(_tileConfig.destroyFX, transform.position, Quaternion.identity);
+            }
 
             gameObject.SetActive(false);
             Invoke(nameof(Destroy), 1);
         }
 
-        internal void Destroy()
-        {
+        internal void Destroy() {
             Destroy(gameObject);
         }
 
-        public async Task MoveDown(Vector3Int targetPosition)
-        {
+        public async Task MoveDown(Vector3Int targetPosition) {
             if (targetPosition.y < 0) return;
 
             var currentPosition = TileKey;
 
             var elapsedTime = 0f;
 
-            while (elapsedTime < _tileConfig.timeToMove)
-            {
+            while (elapsedTime < _tileConfig.timeToMove) {
                 transform.position =
                     Vector3.Lerp(currentPosition, targetPosition, elapsedTime / _tileConfig.timeToMove);
                 elapsedTime += Time.deltaTime;

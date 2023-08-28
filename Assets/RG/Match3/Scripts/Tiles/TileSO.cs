@@ -1,10 +1,8 @@
 ﻿using UnityEngine;
 
-namespace Tiles
-{
+namespace Tiles {
     [CreateAssetMenu(fileName = "Tile", menuName = "Game/Tiles", order = 0)]
-    public class TileSO : ScriptableObject
-    {
+    public class TileSO : ScriptableObject {
         public TileType type = TileType.None;
 
         public Transform destroyFX;

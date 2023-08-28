@@ -1,7 +1,5 @@
-namespace Tiles
-{
-    public enum TileType
-    {
+namespace Tiles {
+    public enum TileType {
         None = 0,
         Green = 1,
         White = 2,

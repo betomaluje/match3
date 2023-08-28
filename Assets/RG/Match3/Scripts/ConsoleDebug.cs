@@ -2,16 +2,14 @@ using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
 
-public class ConsoleDebug : MonoBehaviour
-{
+public class ConsoleDebug : MonoBehaviour {
     private static ConsoleDebug instance;
 
     [SerializeField]
     [Tooltip("Should we print all the debug messages?")]
     private bool _debug;
 
-    public static ConsoleDebug Instance
-    {
+    public static ConsoleDebug Instance {
         get
         {
             if (instance != null) return instance;
@@ -28,29 +26,26 @@ public class ConsoleDebug : MonoBehaviour
         }
     }
 
-    private void Awake()
-    {
-        if (instance == null)
-        {
+    private void Awake() {
+        if (instance == null) {
             instance = this;
             DontDestroyOnLoad(gameObject);
         }
-        else
-        {
+        else {
             Destroy(gameObject);
         }
     }
 
-    public void Log(string message)
-    {
-        if (_debug)
+    public void Log(string message) {
+        if (_debug) {
             Debug.Log(message);
+        }
     }
 
-    public void Log<T>(IEnumerable<T> list, string header)
-    {
+    public void Log<T>(IEnumerable<T> list, string header) {
         var enumerable = list.ToList();
-        if (_debug && enumerable.Any())
+        if (_debug && enumerable.Any()) {
             Debug.Log($"{header}: {string.Join(", ", enumerable)}");
+        }
     }
 }

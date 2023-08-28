@@ -9,8 +9,7 @@ using Tiles;
 using UnityEngine;
 using Random = UnityEngine.Random;
 
-public class GridManager : MonoBehaviour
-{
+public class GridManager : MonoBehaviour {
     [Header("Rules")]
     [SerializeField]
     [Min(1)]
@@ -52,49 +51,51 @@ public class GridManager : MonoBehaviour
 
     public Action OnTileDestroyed = delegate { };
 
-    private void Start()
-    {
+    private void Start() {
         SetupGame();
     }
 
-    private void Update()
-    {
-        if (Input.GetKeyDown(KeyCode.R)) SetupGame();
+    private void Update() {
+        if (Input.GetKeyDown(KeyCode.R)) {
+            SetupGame();
+        }
     }
 
     #region Debug
 
-    private void OnDrawGizmos()
-    {
-        if (Application.isPlaying) return;
+    private void OnDrawGizmos() {
+        if (Application.isPlaying) {
+            return;
+        }
+
         var size = Vector2.one;
-        foreach (var point in EvaluateGridPoints()) Gizmos.DrawWireCube(point, size);
+        foreach (var point in EvaluateGridPoints()) {
+            Gizmos.DrawWireCube(point, size);
+        }
     }
 
     #endregion
 
-    private void OnValidate()
-    {
-        if (_tileContainer == null)
-        {
+    private void OnValidate() {
+        if (_tileContainer == null) {
             var container = new GameObject("Tiles Container");
             _tileContainer = container.transform;
         }
 
-        if (_camera == null && Camera.main != null) _camera = Camera.main.transform;
+        if (_camera == null && Camera.main != null) {
+            _camera = Camera.main.transform;
+        }
     }
 
     /// <summary>
     ///     Sets up a new game. Removes every tile and generates a new tile set
     /// </summary>
-    private void SetupGame()
-    {
+    private void SetupGame() {
         _tiles = new ConcurrentDictionary<Vector3Int, Tile>();
 
         _tileContainer.Clear();
 
-        foreach (var point in EvaluateGridPoints())
-        {
+        foreach (var point in EvaluateGridPoints()) {
             var tilePrefab = _tilePrefabs[Random.Range(0, _tilePrefabs.Length)];
             var tile = Instantiate(tilePrefab, point, Quaternion.identity);
             tile.name = $"Tile ({point.x} {point.y})";
@@ -122,8 +123,7 @@ public class GridManager : MonoBehaviour
     /// <param name="x">The column number</param>
     /// <param name="y">The row number to start searching above</param>
     /// <returns>A dictionary for all the available tiles in that column</returns>
-    private List<Tile> GetAboveTiles(int x, int y)
-    {
+    private List<Tile> GetAboveTiles(int x, int y) {
         return _tiles.Where(pos =>
                 pos.Value != null && pos.Value.TileKey.x == x && pos.Value.TileKey.y > y)
             .Select(p => p.Value)
@@ -136,8 +136,7 @@ public class GridManager : MonoBehaviour
     /// </summary>
     /// <param name="y">The row number</param>
     /// <returns>A dictionary for all the available tiles in that row</returns>
-    private async Task<List<Tile>> GetRow(int y)
-    {
+    private async Task<List<Tile>> GetRow(int y) {
         return await Task.FromResult(_tiles.Where(pos => pos.Value != null && pos.Value.TileKey.y == y)
             .Select(p => p.Value)
             .ToList());
@@ -147,9 +146,11 @@ public class GridManager : MonoBehaviour
     ///     Called when a Tile is clicked
     /// </summary>
     /// <param name="tilePosition">The current tile position</param>
-    public void OnTileClicked(Vector3Int tilePosition)
-    {
-        if (_isBusy) return;
+    public void OnTileClicked(Vector3Int tilePosition) {
+        if (_isBusy) {
+            return;
+        }
+
         ConsoleDebug.Instance.Log($"Clicked {tilePosition}");
 
         DestroyTile(tilePosition);
@@ -161,19 +162,16 @@ public class GridManager : MonoBehaviour
     ///     tiles down
     /// </summary>
     /// <param name="tilePosition">The tile's position to be destroyed</param>
-    private async void DestroyTile(Vector3Int tilePosition)
-    {
+    private async void DestroyTile(Vector3Int tilePosition) {
         _isBusy = true;
 
         OnTileDestroyed?.Invoke();
 
         // 1. we remove it from the main list
-        if (_tiles.TryGetValue(tilePosition, out var currentTile))
-        {
+        if (_tiles.TryGetValue(tilePosition, out var currentTile)) {
             currentTile.DestroyTile();
         }
-        else
-        {
+        else {
             _isBusy = false;
             return;
         }
@@ -183,12 +181,10 @@ public class GridManager : MonoBehaviour
         await Matches(tilePosition);
     }
 
-    private async Task Matches(Vector3Int tilePosition)
-    {
+    private async Task Matches(Vector3Int tilePosition) {
         ConsoleDebug.Instance.Log($"Checking {tilePosition.y}");
 
-        for (var y = tilePosition.y; y < _height; y++)
-        {
+        for (var y = tilePosition.y; y < _height; y++) {
             var matches = await GetMatches(y);
             ConsoleDebug.Instance.Log($"    matches: {matches.Count}");
 
@@ -197,12 +193,14 @@ public class GridManager : MonoBehaviour
             OnTileDestroyed?.Invoke();
 
             var tasks = new List<Task>();
-            foreach (var match in matches)
-                if (_tiles.TryGetValue(match, out var t))
-                {
-                    t.DestroyTile();
-                    tasks.Add(MoveColumnDown(match));
+            foreach (var match in matches) {
+                if (!_tiles.TryGetValue(match, out var t)) {
+                    continue;
                 }
+
+                t.DestroyTile();
+                tasks.Add(MoveColumnDown(match));
+            }
 
             await Task.WhenAll(tasks);
 
@@ -217,25 +215,28 @@ public class GridManager : MonoBehaviour
     ///     Searches every tile above and moves them down by 1 unit
     /// </summary>
     /// <param name="tilePosition">The initial position to start moving Tiles above</param>
-    private async Task MoveColumnDown(Vector3Int tilePosition)
-    {
+    private async Task MoveColumnDown(Vector3Int tilePosition) {
         var verticalAbove = GetAboveTiles(tilePosition.x, tilePosition.y);
 
-        if (verticalAbove.Count == 0) return;
+        if (verticalAbove.Count == 0) {
+            return;
+        }
 
         var lastKey = verticalAbove.Last().TileKey;
 
-        foreach (var tile in verticalAbove)
-        {
+        foreach (var tile in verticalAbove) {
             var previousPosition = tile.TileKey;
 
             var targetPosition = previousPosition;
             targetPosition += Vector3Int.down;
 
-            if (_tiles.TryGetValue(previousPosition, out var t)) await t.MoveDown(targetPosition);
+            if (_tiles.TryGetValue(previousPosition, out var t)) {
+                await t.MoveDown(targetPosition);
+            }
 
-            if (_tiles.ContainsKey(targetPosition) && _tiles.ContainsKey(previousPosition))
+            if (_tiles.ContainsKey(targetPosition) && _tiles.ContainsKey(previousPosition)) {
                 _tiles[targetPosition] = _tiles[previousPosition];
+            }
         }
 
         _tiles.TryRemove(lastKey, out var removed);
@@ -246,8 +247,7 @@ public class GridManager : MonoBehaviour
     /// </summary>
     /// <param name="y">The row position</param>
     /// <returns></returns>
-    private async Task<List<Vector3Int>> GetMatches(int y)
-    {
+    private async Task<List<Vector3Int>> GetMatches(int y) {
         // we get the filtered row for the same tile type
         var sameRow = await GetRow(y);
 
@@ -256,15 +256,18 @@ public class GridManager : MonoBehaviour
         var match = new Match(_minPerRow);
         var matches = await match.CheckRow(sameRow);
 
-        if (matches == null) return await Task.FromResult(new List<Vector3Int>(0));
+        if (matches == null) {
+            return await Task.FromResult(new List<Vector3Int>(0));
+        }
 
         return matches;
     }
 
-    private IEnumerable<Vector3Int> EvaluateGridPoints()
-    {
-        for (var x = 0; x < _width; x++)
-        for (var y = 0; y < _height; y++)
-            yield return new Vector3Int(x, y, 0);
+    private IEnumerable<Vector3Int> EvaluateGridPoints() {
+        for (var x = 0; x < _width; x++) {
+            for (var y = 0; y < _height; y++) {
+                yield return new Vector3Int(x, y, 0);
+            }
+        }
     }
 }
