@@ -7,9 +7,7 @@ using UnityEngine;
 
 namespace Matches {
     public class Match {
-        private static readonly int DEFAULT_MINIUM = 3;
-
-        private readonly int _minimumAmount = DEFAULT_MINIUM;
+        public static readonly int DEFAULT_MINIUM = 3;
 
         private readonly Dictionary<TileType, HashSet<Vector3Int>> _tiles =
             new Dictionary<TileType, HashSet<Vector3Int>>();
@@ -17,8 +15,10 @@ namespace Matches {
         public Match() { }
 
         public Match(int minimumAmount) {
-            _minimumAmount = minimumAmount;
+            MinimumAmount = minimumAmount;
         }
+
+        public int MinimumAmount { get; } = DEFAULT_MINIUM;
 
         /// <summary>
         ///     Checks all the matches for a given set of Tile objects.
@@ -33,7 +33,7 @@ namespace Matches {
             row = row.OrderBy(p => p.TileKey.x).ToList();
 
             foreach (TileType type in Enum.GetValues(typeof(TileType))) {
-                _tiles[type] = GetConsecutiveSameElementList(row, type, _minimumAmount);
+                _tiles[type] = GetConsecutiveSameElementList(row, type, MinimumAmount);
             }
 
             return await Task.FromResult(_tiles.SelectMany(t => t.Value)

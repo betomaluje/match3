@@ -9,9 +9,20 @@ namespace Tiles {
         private GridManager _manager;
 
         // we will use it's position to detect row and column
-        public Vector3Int TileKey => Vector3Int.FloorToInt(transform.position);
+        public Vector3Int TileKey {
+            get => Vector3Int.FloorToInt(transform.position);
+            set { }
+        }
 
-        public TileType Type => _tileConfig.type;
+        public TileSO Config {
+            get => _tileConfig;
+            set => _tileConfig = value;
+        }
+
+        public TileType Type {
+            get => _tileConfig.type;
+            set => _tileConfig.type = value;
+        }
 
         private void Awake() {
             _manager = FindObjectOfType<GridManager>();
